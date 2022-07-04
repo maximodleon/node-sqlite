@@ -4,19 +4,18 @@ const fs = require('fs');
 
 const authorQuery = 'select Attribution from content where content.ContentID = Bookmark.VolumeID'
 const bookTitleQuery = 'select Title from content where content.ContentID = Bookmark.VolumeID'
-const bookChapterQuery = 'select Title from content where ChapterIDBookmarked = Bookmark.ContentID'
+const bookChapterQuery = "select Title from content where content.ContentID like Bookmark.ContentID || '%' and content.ContentType = 899"
 const query = `
 select * from (
-select BookTitle,
-	Title,
+select
 	Text,
 	Annotation,
-	content.ContentID,
+	ContentID,
 	(${authorQuery}) Author,
 	(${bookTitleQuery}) BookTitle,
 	(${bookChapterQuery}) Chapter
 	from Bookmark
-	join content on content.ContentID = Bookmark.ContentID
+  order by DateCreated
 )
 `
 
@@ -73,11 +72,19 @@ function createMarkdownFile() {
 			for (let k = 0; k < highlights.length; k++) {
 				const chapter = chapters[j]
 				const highlight = highlights[k].Text
+				const annotation = highlights[k].Annotation
+				// mover la logica de aqui a una function aparte
 				if (highlight) {
 					if (chapter !== '') {
 						contentStr = contentStr + `   * ${highlight}` + '\n'
+						if (annotation) { // esto debe ir en otra function para poder reusar
+							contentStr = contentStr + `     > ${annotation}` + '\n'
+						}
 					} else {
 						contentStr = contentStr + `* ${highlight}` + '\n'
+						if (annotation) {
+							contentStr = contentStr + `   > ${annotation}` + '\n'
+						}
 					}
 				}
 			}
